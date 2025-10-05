@@ -12,13 +12,14 @@ namespace ToDo
     {
         public string Title { get; set; }
         public string? URL { get; set; } = null;
-        // public bool IsDone { get; set; }
+        public bool IsDone { get; set; }
         public List<TodoItem> SubTasks { get; set; }
 
-        public TodoItem(string title)
+        public TodoItem(string title, string? url = null)
         {
             Title = title;
-            // IsDone = false;
+            URL = url;
+            IsDone = false;
             SubTasks = [];
         }
     }
@@ -70,8 +71,14 @@ namespace ToDo
             try
             {
                 playwright = await Playwright.CreateAsync();
-                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = false });
+                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions {
+                    Args=["--disable-blink-features=AutomationControlled", "--start-maximized"],
+                    Headless = false 
+                });
                 page = await browser.NewPageAsync();
+                int primaryWidth = Screen.PrimaryScreen.Bounds.Width;
+                int primaryHeight = Screen.PrimaryScreen.Bounds.Height;
+                await page.SetViewportSizeAsync(primaryWidth, primaryHeight);
                 await page.GotoAsync("https://www.asda.com/");
             }
             catch (Exception ex)
@@ -157,11 +164,11 @@ namespace ToDo
                 Size = new Size(ClientSize.Width - 30, ClientSize.Height - 190),
                 BorderStyle = BorderStyle.FixedSingle,
                 Font = new Font("Segoe UI", 10F),
-                AllowDrop = true
-                // CheckBoxes = true // Enable checkboxes on tree nodes
+                AllowDrop = true,
+                CheckBoxes = true // Enable checkboxes on tree nodes
             };
             // Event handler for when a checkbox is checked/unchecked
-            // taskTreeView.AfterCheck += TaskTreeView_AfterCheck;
+            taskTreeView.AfterCheck += TaskTreeView_AfterCheck;
             taskTreeView.ItemDrag += TaskTreeView_ItemDrag;
             taskTreeView.DragEnter += TaskTreeView_DragEnter;
             taskTreeView.DragOver += TaskTreeView_DragOver;
@@ -304,7 +311,19 @@ namespace ToDo
             var m = (MouseEventArgs)e;
             Point targetPoint = new Point(m.X, m.Y);
             TreeNode targetNode = taskTreeView.GetNodeAt(targetPoint);
+
             // Open this item in browser window
+            if (targetNode != null && targetNode.Tag is TodoItem item && !string.IsNullOrWhiteSpace(item.URL))
+            {
+                try
+                {
+                    page.GotoAsync(item.URL);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Playwright error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void AddTaskButton_Click(object? sender, EventArgs e)
@@ -364,14 +383,14 @@ namespace ToDo
         /// <summary>
         /// Syncs the IsDone state between the TreeNode's checked state and the data model.
         /// </summary>
-        //private void TaskTreeView_AfterCheck(object sender, TreeViewEventArgs e)
-        //{
-        //    if (e.Node != null && e.Node.Tag is TodoItem item)
-        //    {
-        //       item.IsDone = e.Node.Checked;
-        //       SaveTasks(); // Save changes
-        //    }
-        //}
+        private void TaskTreeView_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            if (e.Node != null && e.Node.Tag is TodoItem item)
+            {
+                item.IsDone = e.Node.Checked;
+                SaveTasks(); // Save changes
+            }
+        }
 
         // --- Drag and Drop Event Handlers ---
         private void TaskTreeView_ItemDrag(object sender, ItemDragEventArgs e)
