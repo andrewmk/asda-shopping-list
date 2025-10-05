@@ -150,6 +150,7 @@ namespace ToDo
             taskTreeView.DragEnter += TaskTreeView_DragEnter;
             taskTreeView.DragOver += TaskTreeView_DragOver;
             taskTreeView.DragDrop += TaskTreeView_DragDrop;
+            taskTreeView.DoubleClick += TaskTreeView_DoubleClick;
 
             // --- New Task Label ---
             newTaskLabel = new Label
@@ -280,6 +281,14 @@ namespace ToDo
                 newTaskTextBox.Text = title;
                 newTaskURLTextBox.Text = url;
             }
+        }
+
+        private void TaskTreeView_DoubleClick(object? sender, EventArgs e)
+        {
+            var m = (MouseEventArgs)e;
+            Point targetPoint = new Point(m.X, m.Y);
+            TreeNode targetNode = taskTreeView.GetNodeAt(targetPoint);
+            // Open this item in browser window
         }
 
         private void AddTaskButton_Click(object? sender, EventArgs e)
