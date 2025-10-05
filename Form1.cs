@@ -1,3 +1,5 @@
+using Microsoft.Playwright;
+using System.Security.Policy;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -9,7 +11,7 @@ namespace ToDo
     public class TodoItem
     {
         public string Title { get; set; }
-        public string? URL { get; set; }
+        public string? URL { get; set; } = null;
         // public bool IsDone { get; set; }
         public List<TodoItem> SubTasks { get; set; }
 
@@ -27,6 +29,10 @@ namespace ToDo
     // =================================================================================
     public partial class TodoForm : Form
     {
+        IPlaywright playwright;
+        IBrowser browser;
+        IPage page;
+
         // --- UI Controls ---
         private TreeView? taskTreeView;
         private TextBox? newTaskTextBox;
@@ -55,6 +61,23 @@ namespace ToDo
 
             InitializeComponents();
             LoadTasks();
+
+            StartBrowser();
+        }
+
+        private async void StartBrowser()
+        {
+            try
+            {
+                playwright = await Playwright.CreateAsync();
+                browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = false });
+                page = await browser.NewPageAsync();
+                await page.GotoAsync("https://www.asda.com/");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Playwright error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void LoadTasks()
