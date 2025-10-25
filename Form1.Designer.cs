@@ -46,6 +46,10 @@
             treeView1.Size = new Size(467, 691);
             treeView1.TabIndex = 0;
             treeView1.AfterCheck += TreeView_AfterCheck;
+            treeView1.ItemDrag += TreeView_ItemDrag;
+            treeView1.DragDrop += TreeView_DragDrop;
+            treeView1.DragEnter += TreeView_DragEnter;
+            treeView1.DragOver += TreeView_DragOver;
             treeView1.DoubleClick += TreeView_DoubleClick;
             // 
             // button1
