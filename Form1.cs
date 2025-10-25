@@ -178,7 +178,7 @@ namespace ToDo
             // --- New Task Label ---
             newTaskLabel = new Label
             {
-                Text = "New entry title",
+                Text = "New Heading",
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = Color.FromArgb(96, 103, 112),
                 Location = new Point(12, ClientSize.Height - 135),
@@ -199,30 +199,10 @@ namespace ToDo
             newTaskTextBox.DragEnter += NewTaskTextBox_DragEnter;
             newTaskTextBox.DragDrop += NewTaskTextBox_DragDrop;
 
-            // --- New Task URL ---
-            newTaskURLLabel = new Label
-            {
-                Text = "URL",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(96, 103, 112),
-                Location = new Point(12, ClientSize.Height - 85),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
-                AutoSize = true
-            };
-
-            // --- New Task URL TextBox ---
-            newTaskURLTextBox = new TextBox
-            {
-                Location = new Point(15, ClientSize.Height - 65),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                Size = new Size(ClientSize.Width - 30, 23),
-                Font = new Font("Segoe UI", 10F),
-            };
-
             // --- Add Task Button ---
             addTaskButton = new Button
             {
-                Text = "Add item",
+                Text = "Add Heading",
                 Location = new Point(15, ClientSize.Height - 35),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
                 Size = new Size(125, 25),
@@ -236,7 +216,7 @@ namespace ToDo
             // --- Add Sub-Task Button ---
             addSubTaskButton = new Button
             {
-                Text = "Add Sub-item",
+                Text = "Add Product",
                 Location = new Point(150, ClientSize.Height - 35),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
                 Size = new Size(125, 25),
@@ -265,8 +245,6 @@ namespace ToDo
             Controls.Add(taskTreeView);
             Controls.Add(newTaskLabel);
             Controls.Add(newTaskTextBox);
-            Controls.Add(newTaskURLLabel);
-            Controls.Add(newTaskURLTextBox);
             Controls.Add(addTaskButton);
             Controls.Add(addSubTaskButton);
             Controls.Add(removeTaskButton);
@@ -328,26 +306,39 @@ namespace ToDo
 
         private void AddTaskButton_Click(object? sender, EventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(newTaskTextBox.Text))
-            {
-                var newItem = new TodoItem(newTaskTextBox.Text);
-                newItem.URL = newTaskURLTextBox.Text;
-                var newNode = new TreeNode(newItem.Title) { Tag = newItem };
-                taskTreeView.Nodes.Add(newNode);
-                newTaskTextBox.Clear();
-                SaveTasks(); // Save changes
-            }
-        }
-
-        private void AddSubTaskButton_Click(object? sender, EventArgs e)
-        {
             if (!string.IsNullOrWhiteSpace(newTaskTextBox.Text) && taskTreeView.SelectedNode != null)
             {
                 var parentNode = taskTreeView.SelectedNode;
                 var parentItem = parentNode.Tag as TodoItem;
 
-                var newItem = new TodoItem(newTaskTextBox.Text);
-                newItem.URL = newTaskURLTextBox.Text;
+                var pageTitle = newTaskTextBox.Text;
+
+                var newItem = new TodoItem(pageTitle);
+                var newNode = new TreeNode(newItem.Title) { Tag = newItem };
+
+                // Add to the UI
+                parentNode.Nodes.Add(newNode);
+                // Add to the data model
+                parentItem.SubTasks.Add(newItem);
+
+                parentNode.Expand(); // Show the new sub-task
+                newTaskTextBox.Clear();
+                SaveTasks(); // Save changes
+            }
+        }
+
+        private async void AddSubTaskButton_Click(object? sender, EventArgs e)
+        {
+            if (taskTreeView.SelectedNode != null)
+            {
+                var parentNode = taskTreeView.SelectedNode;
+                var parentItem = parentNode.Tag as TodoItem;
+
+                var pageTitle = await page.TitleAsync();
+                var pageURL = page.Url;
+
+                var newItem = new TodoItem(pageTitle);
+                newItem.URL = pageURL;
                 var newNode = new TreeNode(newItem.Title) { Tag = newItem };
 
                 // Add to the UI
@@ -486,15 +477,7 @@ namespace ToDo
 
         private void LoadSampleData()
         {
-            var root1 = new TodoItem("Project A");
-            root1.SubTasks.Add(new TodoItem("Design Phase"));
-            var feature1 = new TodoItem("Implementation");
-            feature1.SubTasks.Add(new TodoItem("Create UI mockups"));
-            feature1.SubTasks.Add(new TodoItem("Develop backend API"));
-            root1.SubTasks.Add(feature1);
-            root1.SubTasks.Add(new TodoItem("Testing Phase"));
-
-            var root2 = new TodoItem("Groceries");
+            var root2 = new TodoItem("Shopping lists");
             var dairy = new TodoItem("Dairy");
             dairy.SubTasks.Add(new TodoItem("Milk"));
             dairy.SubTasks.Add(new TodoItem("Cheese"));
@@ -503,7 +486,7 @@ namespace ToDo
             bakery.SubTasks.Add(new TodoItem("Bread"));
             root2.SubTasks.Add(bakery);
 
-            var allTasks = new List<TodoItem> { root1, root2, new("Call Mom") };
+            var allTasks = new List<TodoItem> { root2 };
 
             PopulateTreeView(taskTreeView.Nodes, allTasks);
             //taskTreeView.ExpandAll();
